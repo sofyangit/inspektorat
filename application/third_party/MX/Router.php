@@ -79,7 +79,7 @@ class MX_Router extends CI_Router
 		{
 			$segments[1] = 'index';
 		}
-       
+
 		array_unshift($segments, NULL);
 		unset($segments[0]);
 		$this->uri->rsegments = $segments;
@@ -151,94 +151,95 @@ class MX_Router extends CI_Router
 						}
 					}
 					else
-					if(is_file($source.ucfirst($directory).$ext))
-					{
-						$this->located = 2;
-						return array_slice($segments, 1);
+						if(is_file($source.ucfirst($directory).$ext))
+						{
+							$this->located = 2;
+							return array_slice($segments, 1);
+						}
+						else $this->located = -1;
 					}
-					else $this->located = -1;
-				}
 
-				/* module controller exists? */
-				if(is_file($source.ucfirst($module).$ext))
-				{
-					$this->located = 1;
-					return $segments;
+					/* module controller exists? */
+					if(is_file($source.ucfirst($module).$ext))
+					{
+						$this->located = 1;
+						return $segments;
+					}
 				}
 			}
-		}
 
-		if( ! empty($this->directory)) return;
+			if( ! empty($this->directory)) return;
 
-		/* application sub-directory controller exists? */
-		if($directory)
-		{
-			if(is_file(APPPATH.'controllers/'.$module.'/'.ucfirst($directory).$ext))
+			/* application sub-directory controller exists? */
+			if($directory)
+			{
+				if(is_file(APPPATH.'controllers/'.$module.'/'.ucfirst($directory).$ext))
+				{
+					$this->directory = $module.'/';
+					return array_slice($segments, 1);
+				}
+
+				/* application sub-sub-directory controller exists? */
+				if($controller)
+				{ 
+					if(is_file(APPPATH.'controllers/'.$module.'/'.$directory.'/'.ucfirst($controller).$ext))
+					{
+						$this->directory = $module.'/'.$directory.'/';
+						return array_slice($segments, 2);
+					}
+				}
+			}
+
+			/* application controllers sub-directory exists? */
+			if (is_dir(APPPATH.'controllers/'.$module.'/'))
 			{
 				$this->directory = $module.'/';
 				return array_slice($segments, 1);
 			}
 
-			/* application sub-sub-directory controller exists? */
-			if($controller)
-			{ 
-				if(is_file(APPPATH.'controllers/'.$module.'/'.$directory.'/'.ucfirst($controller).$ext))
-				{
-					$this->directory = $module.'/'.$directory.'/';
-					return array_slice($segments, 2);
-				}
-			}
-		}
-
-		/* application controllers sub-directory exists? */
-		if (is_dir(APPPATH.'controllers/'.$module.'/'))
-		{
-			$this->directory = $module.'/';
-			return array_slice($segments, 1);
-		}
-
-		/* application controller exists? */
-		if (is_file(APPPATH.'controllers/'.ucfirst($module).$ext))
-		{
-			return $segments;
-		}
-		
-		$this->located = -1;
-	}
-
-	/* set module path */
-	protected function _set_module_path(&$_route)
-	{
-		if ( ! empty($_route))
-		{
-			// Are module/directory/controller/method segments being specified?
-			$sgs = sscanf($_route, '%[^/]/%[^/]/%[^/]/%s', $module, $directory, $class, $method);
-			
-			// set the module/controller directory location if found
-			if ($this->locate(array($module, $directory, $class)))
+			/* application controller exists? */
+			if (is_file(APPPATH.'controllers/'.ucfirst($module).$ext))
 			{
-				//reset to class/method
-				switch ($sgs)
+				return $segments;
+			}
+
+			$this->located = -1;
+		}
+
+		/* set module path */
+		protected function _set_module_path(&$_route)
+		{
+			if ( ! empty($_route))
+			{
+			// Are module/directory/controller/method segments being specified?
+				$sgs = sscanf($_route, '%[^/]/%[^/]/%[^/]/%s', $module, $directory, $class, $method);
+
+			// set the module/controller directory location if found
+				if ($this->locate(array($module, $directory, $class)))
 				{
-					case 1:	$_route = $module.'/index';
+				//reset to class/method
+					switch ($sgs)
+					{
+						case 1:	$_route = $module.'/index';
 						break;
-					case 2: $_route = ($this->located < 2) ? $module.'/'.$directory : $directory.'/index';
+						case 2: $_route = ($this->located < 2) ? $module.'/'.$directory : $directory.'/index';
 						break;
-					case 3: $_route = ($this->located == 2) ? $directory.'/'.$class : $class.'/index';
+						case 3: $_route = ($this->located == 2) ? $directory.'/'.$class : $class.'/index';
 						break;
-					case 4: $_route = ($this->located == 3) ? $class.'/'.$method : $method.'/index';
+						case 4: $_route = ($this->located == 3) ? $class.'/'.$method : $method.'/index';
 						break;
+					}
 				}
 			}
 		}
-	}
 
-	public function set_class($class)
-	{
-		$suffix = $this->config->item('controller_suffix');
-		if (strpos($class, $suffix) === FALSE)
+
+
+		public function set_class($class)
 		{
-			$class .= $suffix;
+			$suffix = $this->config->item('controller_suffix');
+			if( $suffix && strpos($class, $suffix) === FALSE) 
+				$class .= $suffix;
 		}
 		parent::set_class($class);
 	}
